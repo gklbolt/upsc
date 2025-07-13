@@ -225,7 +225,10 @@ export function SectionView() {
                         `}
                       >
                         <span className="font-medium mr-3">{option}.</span>
-                        {questions[currentQuestion][`option_${option.toLowerCase()}` as keyof Question]}
+                        {option === 'A' ? questions[currentQuestion].option_a :
+                         option === 'B' ? questions[currentQuestion].option_b :
+                         option === 'C' ? questions[currentQuestion].option_c :
+                         questions[currentQuestion].option_d}
                       </button>
                     ))}
                   </div>

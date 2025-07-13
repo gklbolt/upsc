@@ -76,7 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setLoading(false);
             setInitialized(true);
           }
-        }, 5000);
+        }, 3000); // Reduced timeout to 3 seconds
 
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
@@ -104,7 +104,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
           } catch (profileError) {
             console.error('❌ Error fetching profile during init:', profileError);
-            // Continue without profile rather than blocking
             if (mounted) {
               setProfile(null);
             }
@@ -136,26 +135,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       console.log('🔄 Auth state change:', event, newSession?.user?.id || 'no user');
       
-      // Don't set loading to true for auth state changes after initialization
-      if (initialized) {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user) {
-          try {
-            const userProfile = await fetchUserProfile(newSession.user.id);
-            if (mounted) {
-              setProfile(userProfile);
-            }
-          } catch (error) {
-            console.error('❌ Error fetching profile in auth change:', error);
-            if (mounted) {
-              setProfile(null);
-            }
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      
+      if (newSession?.user) {
+        try {
+          const userProfile = await fetchUserProfile(newSession.user.id);
+          if (mounted) {
+            setProfile(userProfile);
           }
-        } else {
-          setProfile(null);
+        } catch (error) {
+          console.error('❌ Error fetching profile in auth change:', error);
+          if (mounted) {
+            setProfile(null);
+          }
         }
+      } else {
+        setProfile(null);
       }
     };
 
@@ -167,10 +163,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialized]);
 
   const signIn = async (email: string, password: string) => {
     try {

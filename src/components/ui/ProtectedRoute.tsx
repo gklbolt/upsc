@@ -28,8 +28,7 @@ export function ProtectedRoute({ children, requireAdmin = false, requireStudent 
     return <Navigate to="/login" replace />;
   }
 
-  // If user exists but no profile, allow a brief moment for profile to load
-  // then show error with retry option
+  // If user exists but no profile, show error with retry option
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -37,9 +36,9 @@ export function ProtectedRoute({ children, requireAdmin = false, requireStudent 
           <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
             <span className="text-yellow-600 text-xl">⚠️</span>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Loading</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Not Found</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Your profile is being loaded. If this persists, try refreshing the page.
+            Unable to load your profile. Please try refreshing the page or contact support.
           </p>
           <div className="flex space-x-3 justify-center">
             <button
