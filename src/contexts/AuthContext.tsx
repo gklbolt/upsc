@@ -36,6 +36,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
     try {
@@ -62,11 +63,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
         console.log('🔄 Initializing auth...');
         
+        // Set a timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          if (mounted && !initialized) {
+            console.log('⚠️ Auth initialization timeout, setting loading to false');
+            setLoading(false);
+            setInitialized(true);
+          }
+        }, 5000);
+
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
@@ -77,6 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setProfile(null);
           setSession(null);
           setLoading(false);
+          setInitialized(true);
           return;
         }
 
@@ -85,9 +97,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setSession(currentSession);
           setUser(currentSession.user);
           
-          const userProfile = await fetchUserProfile(currentSession.user.id);
-          if (mounted) {
-            setProfile(userProfile);
+          try {
+            const userProfile = await fetchUserProfile(currentSession.user.id);
+            if (mounted) {
+              setProfile(userProfile);
+            }
+          } catch (profileError) {
+            console.error('❌ Error fetching profile during init:', profileError);
+            // Continue without profile rather than blocking
+            if (mounted) {
+              setProfile(null);
+            }
           }
         } else {
           console.log('ℹ️ No existing session found');
@@ -104,7 +124,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       } finally {
         if (mounted) {
+          clearTimeout(timeoutId);
           setLoading(false);
+          setInitialized(true);
         }
       }
     };
@@ -114,23 +136,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       console.log('🔄 Auth state change:', event, newSession?.user?.id || 'no user');
       
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      
-      if (newSession?.user) {
-        try {
-          const userProfile = await fetchUserProfile(newSession.user.id);
-          if (mounted) {
-            setProfile(userProfile);
+      // Don't set loading to true for auth state changes after initialization
+      if (initialized) {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          try {
+            const userProfile = await fetchUserProfile(newSession.user.id);
+            if (mounted) {
+              setProfile(userProfile);
+            }
+          } catch (error) {
+            console.error('❌ Error fetching profile in auth change:', error);
+            if (mounted) {
+              setProfile(null);
+            }
           }
-        } catch (error) {
-          console.error('❌ Error fetching profile in auth change:', error);
-          if (mounted) {
-            setProfile(null);
-          }
+        } else {
+          setProfile(null);
         }
-      } else {
-        setProfile(null);
       }
     };
 
@@ -142,6 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);

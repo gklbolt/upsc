@@ -28,24 +28,33 @@ export function ProtectedRoute({ children, requireAdmin = false, requireStudent 
     return <Navigate to="/login" replace />;
   }
 
-  // If user exists but no profile, show error with retry
+  // If user exists but no profile, allow a brief moment for profile to load
+  // then show error with retry option
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
-          <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-600 text-xl">⚠️</span>
+          <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <span className="text-yellow-600 text-xl">⚠️</span>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Not Found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Loading</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Your user profile could not be loaded. This might be a temporary issue.
+            Your profile is being loaded. If this persists, try refreshing the page.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Retry
-          </button>
+          <div className="flex space-x-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Refresh Page
+            </button>
+            <button
+              onClick={() => window.location.href = '/login'}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Back to Login
+            </button>
+          </div>
         </div>
       </div>
     );
