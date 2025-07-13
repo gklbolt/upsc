@@ -5,7 +5,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       profiles: {
@@ -240,4 +240,4 @@ export type Database = {
       };
     };
   };
-};
+}

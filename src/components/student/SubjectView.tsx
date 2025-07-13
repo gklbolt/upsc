@@ -212,7 +212,8 @@ export function SubjectView() {
                   <div className="space-y-3">
                     {module.sections.map((section, sectionIndex) => {
                       const isCompleted = userProgress[section.id];
-                      const canAccess = isUnlocked && (sectionIndex === 0 || userProgress[module.sections[sectionIndex - 1]?.id]);
+                      const previousSection = sectionIndex > 0 ? module.sections[sectionIndex - 1] : null;
+                      const canAccess = isUnlocked && (sectionIndex === 0 || (previousSection && userProgress[previousSection.id]));
 
                       return (
                         <Link
