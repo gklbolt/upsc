@@ -21,7 +21,6 @@ interface Section {
   link_url: string | null;
   order_index: number;
   is_required: boolean;
-  is_completed?: boolean;
 }
 
 interface Subject {
