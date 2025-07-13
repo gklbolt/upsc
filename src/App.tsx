@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { ConnectionStatus } from './components/ui/ConnectionStatus';
 import { ProtectedRoute } from './components/ui/ProtectedRoute';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
@@ -17,6 +18,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ConnectionStatus />
         <div className="min-h-screen bg-gray-50">
           <Routes>
             <Route path="/login" element={<Login />} />

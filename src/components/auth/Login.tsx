@@ -31,7 +31,17 @@ export function Login() {
       
       if (error) {
         console.error('Login error:', error);
-        toast.error(error.message || 'Invalid email or password');
+        
+        // Show user-friendly error messages
+        if (error.message.includes('Database connection not configured')) {
+          toast.error('Application not properly configured. Please contact support.');
+        } else if (error.message.includes('Unable to connect to the database')) {
+          toast.error('Connection error. Please check your internet and try again.');
+        } else if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password');
+        } else {
+          toast.error(error.message || 'Login failed. Please try again.');
+        }
       } else {
         toast.success('Welcome back!');
         // The auth context will handle the redirect automatically

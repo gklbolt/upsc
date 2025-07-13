@@ -174,13 +174,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log('🔄 Starting sign in process...');
       
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.error('❌ Supabase environment variables not configured');
+        return { error: new Error('Database connection not configured. Please check environment variables.') };
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       
       if (error) {
-        console.error('❌ Sign in error:', error);
+        console.error('❌ Sign in error:', error.message);
+        
+        // Handle specific error types
+        if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+          return { error: new Error('Unable to connect to the database. Please check your internet connection and try again.') };
+        }
+        
         return { error };
       }
       
