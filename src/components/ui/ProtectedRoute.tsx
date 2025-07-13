@@ -36,9 +36,9 @@ export function ProtectedRoute({ children, requireAdmin = false, requireStudent 
           <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
             <span className="text-yellow-600 text-xl">⚠️</span>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Not Found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Setting up your profile...</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Unable to load your profile. Please try refreshing the page or contact support.
+            We're creating your profile. This should only take a moment.
           </p>
           <div className="flex space-x-3 justify-center">
             <button

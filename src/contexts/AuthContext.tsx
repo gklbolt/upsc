@@ -42,14 +42,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log('🔄 Fetching profile for user:', userId);
       
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
+      });
+
+      const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+
       if (error) {
         console.error('❌ Error fetching profile:', error);
+        
+        // If profile doesn't exist, create one
+        if (error.code === 'PGRST116') {
+          console.log('📝 Profile not found, creating default profile...');
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData.user) {
+            const newProfile = {
+              id: userId,
+              email: userData.user.email || '',
+              full_name: userData.user.user_metadata?.full_name || null,
+              role: 'student' as const
+            };
+
+            const { data: createdProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert(newProfile)
+              .select()
+              .single();
+
+            if (createError) {
+              console.error('❌ Error creating profile:', createError);
+              return null;
+            }
+
+            console.log('✅ Profile created successfully:', createdProfile.role);
+            return createdProfile;
+          }
+        }
         return null;
       }
 
@@ -66,6 +101,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
+      if (initialized) return; // Prevent multiple initializations
+      
       try {
         console.log('🔄 Initializing auth...');
         
@@ -76,7 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setLoading(false);
             setInitialized(true);
           }
-        }, 3000); // Reduced timeout to 3 seconds
+        }, 8000); // Increased timeout
 
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
@@ -138,7 +175,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       
-      if (newSession?.user) {
+      if (newSession?.user && event !== 'TOKEN_REFRESHED') {
         try {
           const userProfile = await fetchUserProfile(newSession.user.id);
           if (mounted) {
@@ -150,15 +187,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setProfile(null);
           }
         }
-      } else {
+      } else if (!newSession?.user) {
         setProfile(null);
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Initialize auth
+    // Then initialize auth
     initializeAuth();
 
     return () => {
@@ -168,7 +205,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       subscription.unsubscribe();
     };
-  }, [initialized]);
+  }, []); // Remove initialized from dependency array
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -217,6 +254,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
       });
 
       if (error) {
